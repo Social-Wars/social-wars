@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Social Wars</title>
+        <link rel="shortcut icon" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
+        <link rel="icon" type="image/gif" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
+        <style>
+            body {
+                font-family: 'lucida grande', tahoma, verdana, arial, sans-serif;
+                text-align: center;
+            }
+            #header {
+                width: 760px;
+                margin-top: 50px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            #session {
+                float: right;
+            }
+            #gameBar {
+                text-align: left;
+                width: 760px;
+                margin-top: 0px;
+                margin-bottom: 0px;
+                padding: 0px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            #gameBar img.header-img {
+                display: block;
+                width: 760px;
+                height: auto;
+            }
+            #gamebar_buttons {
+                background-color: rgb(97, 104, 7);
+                border: solid rgb(65, 70, 3) 3px;
+                border-bottom: solid rgb(65, 70, 3) 4px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+            }
+            .gameBarButton {
+                display: inline-block;
+                height: 19px;
+                color: black;
+                border: solid 1.5px;
+                border-color: rgb(80, 79, 29);
+                background-color: rgb(249, 250, 202);
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                font-size: 11pt;
+                padding: 2px 3px 1px 3px;
+            }
+            .gameBarButtonSelected {
+                background-color: rgb(233, 221, 81);
+            }
+            .gameBarButton img {
+                height: 17px;
+                padding-right: 3px;
+                vertical-align: middle;
+            }
+            .gameBarButton:hover {
+                background-color: rgb(250, 237, 90);
+                text-decoration: none;
+            }
+            .gameBarButtonSelected:hover {
+                background-color: rgb(223, 212, 82);
+            }
+            .gameBarButtonRed {
+                background-color: rgb(180, 30, 30);
+                border-color: rgb(120, 10, 10);
+                color: white;
+            }
+            .gameBarButtonRed:hover {
+                background-color: rgb(200, 50, 50);
+            }
+            .globe-emoji {
+                font-size: 13px;
+                vertical-align: middle;
+                margin-left: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div id="session">
+                <p style="display:inline">Welcome <b>{{save_info.name}}</b>! Level {{save_info.level}} (<a href="/">Log Out</a>)</p>
+            </div>
+        </div>
+        <br>
+        <div id="gameBar">
+            <img class="header-img" src="img/socialwarsheader.jpg" alt="Social Wars"/>
+            <div id="gamebar_buttons">
+                <a class="gameBarButton" href="#"><div><img src="img/gift.png" alt="">Free Gifts</div></a>
+                <a class="gameBarButton gameBarButtonSelected" href="#"><div><img alt="">Play</div></a>
+                <a class="gameBarButton gameBarButtonRed" href="#"><div><img src="img/cash.png" alt="">Get Cash</div></a>
+                <a class="gameBarButton" href="#"><div>Invite</div></a>
+                <a class="gameBarButton" href="#"><div>Fan Page</div></a>
+                <a class="gameBarButton" href="#"><div>Forums</div></a>
+                <a class="gameBarButton gameBarButtonRed" href="#"><div><img src="img/chat.png" alt="">21</div></a><span class="globe-emoji">🌍</span>
+            </div>
+            <embed id="swf"
+                src="http://{{SERVERIP}}:{{SERVERPORT}}/static/socialwars/flash/SWLoader.swf?swftoload=/static/socialwars/flash/{{GAMEVERSION}}"
+                allowfullscreen="true" bgcolor="#669C2C" quality="high" width="760" height="600" name="se"
+                type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"
+                flashvars='spdebug=notnull&brk=0
+                &staticUrl=http://{{SERVERIP}}:{{SERVERPORT}}/static/socialwars/&brk=0
+                &dynamicUrl=http://{{SERVERIP}}:{{SERVERPORT}}/dynamic/menvswomen/srvsexwars/&brk=0
+                &skiphash12341=notnull&brk=0
+                &fb_sig_user={{save_info.userid}}&brk=0
+                &user_key=123456789&brk=0
+                &language=en&brk=0
+                &accessToken=AAABbZAm0wdMUBALsOrR0Ho68CLjaOT8SV3vftKg9mbo1zZColaW5FljRVaLxPGxXXnm1M98mTZCAttcQ4GHwvSyXfsyxYmvKMH8Hmn5iliSPnjvIsZA6&brk=0
+                &sex=m&brk=0
+                &lastLoggedIn=1349266517&brk=0
+                &dailyBonus=0&brk=0
+                &friendsInfo={{friendsInfo | tojson}}&brk=0
+                &serverTime={{serverTime}}&brk=0
+                &forceSyncError=1&brk=0
+                &forceAttackReload=0&brk=0
+                &forceQuestReload=0&brk=0'/>
+        </div>
+        <script>
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    var swf = document.getElementById('swf');
+                    if (swf) {
+                        swf.dispatchEvent(new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        }));
+                    }
+                }, 500);
+            });
+        </script>
+    </body>
+</html>
