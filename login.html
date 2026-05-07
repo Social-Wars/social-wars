@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Social Wars</title>
+        <link rel="shortcut icon" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
+        <link rel="icon" type="image/gif" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
+        <link rel="stylesheet" href="css/facebook.css"/>
+    </head>
+    <body class="ego_wide canvas center_fixed_width_app fbx UIPage_LoggedOut liquid hideBanner Locale_en_US" style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); overflow: auto;">
+        <div style="text-align: center;">
+            <img src="img/logo.png" style="width: 200px;" alt="Social Wars Logo"/>
+            <p>{{version}}</p>
+        </div>
+        <div class="mvl ptm uiInterstitial canvas_error_page uiInterstitialLarge uiBoxWhite">
+            <div class="phl ptm uiInterstitialContent" style="overflow: auto; display: inblock;">
+                <br>
+                <div style="margin-left:20px; font-size:13px; float: left;">
+                    {% if saves_info %}
+                    <form method="post">
+                        <b>Select an Empire</b>
+                        <br><br>
+                        <div style="float: left; margin-right: 4px;">
+                            <img src="img/worker.png" style="height: 27px; margin-top: 0px;" alt=""/>
+                        </div>
+                        <div style="float: left">
+                            <select id="USERID" name="USERID" style="height: 27px; min-width: 330px;" required>
+                                {% for save in saves_info %}
+                                <option value="{{save.userid}}" title="{{save.userid}}">{{save.name}} ~ level {{save.level}} ({{save.xp}} xp)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <br><br>
+                        <br>
+                        <input type="hidden" id="GAMEVERSION" name="GAMEVERSION" value="Basesec_1.5.4.swf"/>
+                        <div style="overflow: auto; display: inblock;">
+                            <div style="float: right;">
+                                <button type="submit" style="font-size:14px; height: 25px">Log in</button>
+                            </div>
+                        </div>
+                    </form>
+                    <br>
+                    <p style="font-size:13px; display: inline;">Or </p>
+                    {% endif %}
+                    <p style="font-size:13px; display: inline;">
+                        <b><a href="/new.html">Create a new Empire</a></b>
+                    </p>
+                    <br><br>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
