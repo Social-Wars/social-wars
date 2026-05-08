@@ -356,6 +356,8 @@
         const pass = document.getElementById('loginPass').value;
         const remember = document.getElementById('rememberMe').checked;
         if (!email || !pass) { showMsg('Please fill in all fields.', 'error'); return; }
+        const emailErr = validateEmail(email);
+        if (emailErr) { showMsg(emailErr, 'error'); return; }
         try {
             await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
             const result = await signInWithEmailAndPassword(auth, email, pass);
@@ -377,6 +379,8 @@
         const pass = document.getElementById('regPass').value;
         const confirm = document.getElementById('regPassConfirm').value;
         if (!email || !pass || !confirm) { showMsg('Please fill in all fields.', 'error'); return; }
+        const emailErr = validateEmail(email);
+        if (emailErr) { showMsg(emailErr, 'error'); return; }
         if (!checkReqs(pass)) {
             passReqs.classList.add('visible');
             showMsg('Password does not meet the requirements.', 'error');
@@ -410,6 +414,8 @@
         clearMsg();
         const email = document.getElementById('resetEmail').value.trim();
         if (!email) { showMsg('Please enter your email address.', 'error'); return; }
+        const resetEmailErr = validateEmail(email);
+        if (resetEmailErr) { showMsg(resetEmailErr, 'error'); return; }
         try {
             await sendPasswordResetEmail(auth, email);
             showMsg('Password reset email sent! Check your inbox.', 'success');
@@ -417,6 +423,61 @@
             showMsg(firebaseError(e.code), 'error');
         }
     });
+
+    // ── EMAIL VALIDATION ──
+    const ALLOWED_DOMAINS = [
+        'gmail.com','googlemail.com',
+        'outlook.com','hotmail.com','hotmail.es','hotmail.co.uk','live.com','live.es','msn.com',
+        'yahoo.com','yahoo.es','yahoo.co.uk','yahoo.fr','yahoo.de',
+        'icloud.com','me.com','mac.com',
+        'aol.com','protonmail.com','proton.me',
+        'zoho.com','yandex.com','yandex.ru',
+        'gmx.com','gmx.net','gmx.de',
+        'mail.com','tutanota.com','fastmail.com','fastmail.fm'
+    ];
+
+    function validateEmail(email) {
+        if (!email) return 'Please enter your email address.';
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regex.test(email)) return 'Invalid email address format.';
+        const domain = email.split('@')[1].toLowerCase();
+        if (!ALLOWED_DOMAINS.includes(domain)) {
+            return 'Only personal email addresses are allowed (Gmail, Outlook, Yahoo, iCloud, etc.). Temporary or VPN emails are not accepted.';
+        }
+        return null;
+    }
+
+    // Inline email feedback
+    function setupEmailFeedback(inputId) {
+        const input = document.getElementById(inputId);
+        input.addEventListener('blur', () => {
+            const err = validateEmail(input.value.trim());
+            let feedback = input.parentElement.querySelector('.email-feedback');
+            if (!feedback) {
+                feedback = document.createElement('div');
+                feedback.className = 'email-feedback';
+                feedback.style.cssText = 'font-size:11px;margin-top:3px;';
+                input.parentElement.appendChild(feedback);
+            }
+            if (err && input.value.trim()) {
+                feedback.style.color = '#c0392b';
+                feedback.textContent = '✗ ' + err;
+            } else if (!err && input.value.trim()) {
+                feedback.style.color = '#1e8449';
+                feedback.textContent = '✓ Valid email address';
+            } else {
+                feedback.textContent = '';
+            }
+        });
+        input.addEventListener('input', () => {
+            const feedback = input.parentElement.querySelector('.email-feedback');
+            if (feedback) feedback.textContent = '';
+        });
+    }
+
+    setupEmailFeedback('loginEmail');
+    setupEmailFeedback('regEmail');
+    setupEmailFeedback('resetEmail');
 
     function firebaseError(code) {
         const errors = {
