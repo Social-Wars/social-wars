@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Social Wars - System Check</title>
+    <title>Social Wars</title>
     <link rel="shortcut icon" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
     <link rel="icon" type="image/gif" href="https://web.archive.org/web/20140601135001im_/https://fbcdn-photos-e-a.akamaihd.net/hphotos-ak-xpa1/t39.2080-0/851579_577252918974734_1364279235_n.gif"/>
     <style>
@@ -49,6 +49,8 @@
     <div class="sw-version">{{version}}</div>
 
     <div id="checks">
+        <!-- NEW CHECK: Social Wars App connectivity (Railway) -->
+        <div class="check-row" id="check-appserver"><span class="check-icon">⏳</span><span class="check-label">Social Wars App</span></div>
         <div class="check-row" id="check-anti-frame"><span class="check-icon">⏳</span><span class="check-label">Anti‑frame protection</span></div>
         <div class="check-row" id="check-webdriver"><span class="check-icon">⏳</span><span class="check-label">Browser automation detection</span></div>
         <div class="check-row" id="check-adblock"><span class="check-icon">⏳</span><span class="check-label">Ad blocker verification</span></div>
@@ -82,7 +84,6 @@
         const PASSES_KEY = 'sw_index_passes';
         const VERIFIED_KEY = 'index_verified';   // sessionStorage
 
-        // Check for existing lock (another tab already running)
         if (localStorage.getItem(LOCK_KEY)) {
             document.getElementById('global-error').style.display = 'block';
             document.getElementById('global-error').textContent = 'Another index verification is already in progress. Please close the other tab.';
@@ -90,11 +91,9 @@
             return;
         }
 
-        // Set lock with unique tab id
         const tabId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         localStorage.setItem(LOCK_KEY, tabId);
 
-        // Clear lock when page unloads
         window.addEventListener('beforeunload', () => {
             if (localStorage.getItem(LOCK_KEY) === tabId) {
                 localStorage.removeItem(LOCK_KEY);
@@ -103,13 +102,14 @@
 
         // ---------- SPEED BOOST ----------
         let passes = parseInt(localStorage.getItem(PASSES_KEY) || '0', 10);
-        passes = Math.min(passes, 3); // max 3 previous passes
-        const reductionMs = passes * 2000; // each pass reduces 2 seconds
+        passes = Math.min(passes, 3);
+        const reductionMs = passes * 2000;
         const BASE_CHECK_DURATION = 10000;
-        const EFFECTIVE_CHECK_DURATION = Math.max(4000, BASE_CHECK_DURATION - reductionMs); // minimum 4 seconds
+        const EFFECTIVE_CHECK_DURATION = Math.max(4000, BASE_CHECK_DURATION - reductionMs);
 
         // ---------- VARIABLES ----------
         const checks = {
+            'check-appserver': false,
             'check-anti-frame': false,
             'check-webdriver': false,
             'check-adblock': false,
@@ -121,7 +121,6 @@
             'check-firebase-storage': false,
             'check-session': false
         };
-        const totalChecks = Object.keys(checks).length;
         const progressFill = document.getElementById('progress-fill');
         const progressPercent = document.getElementById('progress-percent');
         const progressLabel = document.getElementById('progress-label');
@@ -186,12 +185,27 @@
         }
 
         const TRANSITION_DELAY = 2000;
+        // ---------- RAILWAY APP URL (replace with your actual URL) ----------
+        const RAILWAY_APP_URL = 'https://your-railway-app-url'; // <-- SET YOUR RAILWAY APP URL HERE
 
         try {
-            // ---------- CHECKS ----------
+            // 0. Social Wars App connectivity (Railway server)
+            progressLabel.textContent = 'Social Wars App connectivity...';
+            await animateProgress(5, EFFECTIVE_CHECK_DURATION, 0);
+            try {
+                await fetchWithTimeout(RAILWAY_APP_URL, 5000);
+                setCheck('check-appserver', true);
+            } catch (e) {
+                setCheck('check-appserver', false, 'Server unreachable');
+                showGlobalError('Social Wars server is not reachable. Please try again later.');
+                localStorage.removeItem(LOCK_KEY);
+                return;
+            }
+            await sleep(TRANSITION_DELAY);
+
             // 1. Anti‑frame
             progressLabel.textContent = 'Anti‑frame protection...';
-            await animateProgress(10, EFFECTIVE_CHECK_DURATION, 0);
+            await animateProgress(10, EFFECTIVE_CHECK_DURATION, 5);
             if (window.top !== window.self) {
                 setCheck('check-anti-frame', false, 'Framed');
                 showGlobalError('Access denied: page loaded in a frame.');
@@ -203,7 +217,7 @@
 
             // 2. WebDriver
             progressLabel.textContent = 'Browser automation detection...';
-            await animateProgress(20, EFFECTIVE_CHECK_DURATION, 10);
+            await animateProgress(15, EFFECTIVE_CHECK_DURATION, 10);
             if (navigator.webdriver) {
                 setCheck('check-webdriver', false, 'Automation');
                 showGlobalError('Automated browsing is not allowed.');
@@ -215,7 +229,7 @@
 
             // 3. Adblock
             progressLabel.textContent = 'Ad blocker verification...';
-            await animateProgress(30, EFFECTIVE_CHECK_DURATION, 20);
+            await animateProgress(20, EFFECTIVE_CHECK_DURATION, 15);
             const adTest = document.createElement('div');
             adTest.className = 'adsbox';
             adTest.style.height = '1px';
@@ -238,7 +252,7 @@
 
             // 4. Privacy browser
             progressLabel.textContent = 'Privacy browser check...';
-            await animateProgress(40, EFFECTIVE_CHECK_DURATION, 30);
+            await animateProgress(25, EFFECTIVE_CHECK_DURATION, 20);
             const ua = navigator.userAgent.toLowerCase();
             if (ua.includes('tor') || (navigator.productSub === '20100101' && navigator.vendor === '')) {
                 setCheck('check-privacy', false, 'Privacy');
@@ -251,7 +265,7 @@
 
             // 5. DevTools
             progressLabel.textContent = 'Developer tools detection...';
-            await animateProgress(50, EFFECTIVE_CHECK_DURATION, 40);
+            await animateProgress(30, EFFECTIVE_CHECK_DURATION, 25);
             let devtoolsOpen = false;
             const threshold = 160;
             const detectDevTools = () => {
@@ -274,7 +288,7 @@
 
             // 6. Google connectivity
             progressLabel.textContent = 'Google connectivity...';
-            await animateProgress(60, EFFECTIVE_CHECK_DURATION, 50);
+            await animateProgress(40, EFFECTIVE_CHECK_DURATION, 30);
             try {
                 await fetchWithTimeout('https://www.google.com/generate_204', 3000);
                 setCheck('check-google', true);
@@ -286,9 +300,9 @@
             }
             await sleep(TRANSITION_DELAY);
 
-            // 7. Google APIs
+            // 7. Google APIs – bring progress to 63% for the verification freeze
             progressLabel.textContent = 'Google APIs...';
-            await animateProgress(63, EFFECTIVE_CHECK_DURATION, 60);
+            await animateProgress(63, EFFECTIVE_CHECK_DURATION, 40);
             try {
                 await fetchWithTimeout('https://www.googleapis.com/', 3000);
                 setCheck('check-googleapis', true);
@@ -298,7 +312,7 @@
                 localStorage.removeItem(LOCK_KEY);
                 return;
             }
-            // Pause at 63% to verify previous checks
+            // Freeze at 63% to verify previous checks
             progressLabel.textContent = 'Verifying previous checks...';
             await sleep(4000);
 
@@ -355,18 +369,12 @@
             await sleep(TRANSITION_DELAY);
 
             // ---------- SUCCESS ----------
-            // Increment pass counter (capped at 3)
             if (passes < 3) {
                 localStorage.setItem(PASSES_KEY, (passes + 1).toString());
             }
-
-            // Mark verification passed in sessionStorage for other pages
             sessionStorage.setItem(VERIFIED_KEY, 'true');
-
-            // Clear the lock
             localStorage.removeItem(LOCK_KEY);
 
-            // Decide redirect destination
             const targetPage = user ? 'play.html' : 'login.html';
             progressLabel.textContent = `Redirecting to ${targetPage}...`;
             progressFill.style.background = '#1e8449';
