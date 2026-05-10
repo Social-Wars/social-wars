@@ -92,6 +92,14 @@
         </style>
     </head>
     <body>
+
+        <!-- ═══ INDEX VERIFICATION GUARD ═══ -->
+        <script>
+            if (!sessionStorage.getItem('index_verified')) {
+                window.location.href = 'index.html';
+            }
+        </script>
+
         <div id="header">
             <div id="session">
                 <p style="display:inline">
