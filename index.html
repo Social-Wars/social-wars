@@ -12,34 +12,35 @@
             font-family: 'lucida grande', tahoma, verdana, arial, sans-serif;
             display: flex; justify-content: center; align-items: center; height: 100vh; margin:0;
         }
-        .check-box {
-            background: white; border: 1px solid #ccc; border-radius: 8px;
-            padding: 30px; text-align: left; width: 420px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .sw-check-box {
+            background: white; border: 1px solid #ccc; border-radius: 4px;
+            padding: 30px; text-align: left; width: 460px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        .check-box h1 { color: #3b5998; text-align: center; margin-bottom: 20px; }
+        .sw-check-box h1 { color: #3b5998; text-align: center; margin-bottom: 20px; font-size: 22px; }
         .check-row { display: flex; align-items: center; padding: 6px 0; }
         .check-icon { width: 24px; font-size: 18px; margin-right: 10px; text-align: center; }
         .check-label { flex: 1; font-size: 14px; color: #333; }
-        .error-msg { color: #c0392b; margin: 15px 0; font-size: 14px; font-weight: bold; display: none; }
-        .all-ok { color: #1e8449; margin: 15px 0; font-size: 14px; font-weight: bold; display: none; }
+        .progress-container { margin-top: 18px; margin-bottom: 10px; }
+        .progress-text { font-size: 12px; color: #555; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .progress-bar {
+            width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: #3b5998; border-radius: 3px; transition: width 0.3s linear; width: 0%;
+        }
+        .error-msg { color: #c0392b; margin-top: 15px; font-size: 14px; font-weight: bold; display: none; }
+        .all-ok { color: #1e8449; margin-top: 15px; font-size: 14px; font-weight: bold; display: none; text-align: center; }
         button { 
             background: #3b5998; color: white; border: none; padding: 8px 20px; 
             border-radius: 3px; font-size: 14px; cursor: pointer; margin-top: 15px; width: 100%;
         }
         button:hover { background: #2d4373; }
         button:disabled { background: #aaa; cursor: not-allowed; }
-        .progress-bar {
-            display: none; width: 100%; height: 4px; background: #eee; border-radius: 2px; margin-bottom: 10px;
-        }
-        .progress-fill {
-            height: 100%; background: #3b5998; border-radius: 2px; transition: width 0.3s;
-        }
     </style>
 </head>
 <body>
-<div class="check-box">
+<div class="sw-check-box">
     <h1>Social Wars</h1>
-    <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     <div id="checks">
         <div class="check-row" id="check-anti-frame"><span class="check-icon">⏳</span><span class="check-label">Anti‑frame protection</span></div>
         <div class="check-row" id="check-webdriver"><span class="check-icon">⏳</span><span class="check-label">Browser automation detection</span></div>
@@ -51,9 +52,18 @@
         <div class="check-row" id="check-firebase-auth"><span class="check-icon">⏳</span><span class="check-label">Firebase Auth</span></div>
         <div class="check-row" id="check-firebase-storage"><span class="check-icon">⏳</span><span class="check-label">Firebase Storage</span></div>
         <div class="check-row" id="check-session"><span class="check-icon">⏳</span><span class="check-label">Session validation</span></div>
-        <!-- AI verification row (hidden unless enabled) -->
-        <div class="check-row" id="check-ai" style="display:none"><span class="check-icon">⏳</span><span class="check-label">AI security scan</span></div>
     </div>
+
+    <div class="progress-container">
+        <div class="progress-text">
+            <span id="progress-label">Initializing...</span>
+            <span id="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
     <div id="global-error" class="error-msg"></div>
     <div id="all-ok-msg" class="all-ok">✅ All checks passed. Redirecting...</div>
     <button id="retry-btn" style="display:none" onclick="location.reload()">Retry All Checks</button>
@@ -61,9 +71,6 @@
 
 <script>
     (async function() {
-        // -- Helper functions --
-        const sleep = ms => new Promise(r => setTimeout(r, ms));
-        
         const checks = {
             'check-anti-frame': false,
             'check-webdriver': false,
@@ -74,37 +81,36 @@
             'check-googleapis': false,
             'check-firebase-auth': false,
             'check-firebase-storage': false,
-            'check-session': false,
-            // 'check-ai': false   // uncomment if AI check enabled
+            'check-session': false
         };
 
         const totalChecks = Object.keys(checks).length;
         let completedChecks = 0;
-        const progressBar = document.getElementById('progress-bar');
         const progressFill = document.getElementById('progress-fill');
-        progressBar.style.display = 'block';
+        const progressPercent = document.getElementById('progress-percent');
+        const progressLabel = document.getElementById('progress-label');
+        const retryBtn = document.getElementById('retry-btn');
+        const globalError = document.getElementById('global-error');
 
-        function updateProgress() {
-            completedChecks++;
-            const percent = Math.round((completedChecks / totalChecks) * 100);
+        function setProgress(percent, label) {
             progressFill.style.width = percent + '%';
+            progressPercent.textContent = percent + '%';
+            if (label) progressLabel.textContent = label;
         }
 
         function setCheck(id, success, message) {
             const row = document.getElementById(id);
             const icon = row.querySelector('.check-icon');
             icon.textContent = success ? '✅' : '❌';
-            const label = row.querySelector('.check-label');
-            if (message) label.textContent += ' (' + message + ')';
+            if (message) row.querySelector('.check-label').textContent += ' (' + message + ')';
             checks[id] = success;
-            updateProgress();
+            completedChecks++;
         }
 
         function showGlobalError(msg) {
-            document.getElementById('global-error').style.display = 'block';
-            document.getElementById('global-error').textContent = msg;
-            document.getElementById('retry-btn').style.display = 'block';
-            document.querySelector('.check-box h1').textContent = 'Access Restricted';
+            globalError.style.display = 'block';
+            globalError.textContent = msg;
+            retryBtn.style.display = 'block';
         }
 
         async function fetchWithTimeout(url, timeout = 3000) {
@@ -120,31 +126,57 @@
             }
         }
 
-        // Delay between checks (20 seconds)
-        const CHECK_DELAY = 20000; // 20 seconds
+        // Animation helper: fill from current to target over duration (ms)
+        function animateProgress(targetPercent, duration, currentPercent) {
+            return new Promise(resolve => {
+                const startTime = performance.now();
+                const startPercent = parseFloat(progressFill.style.width) || 0;
+                function step(now) {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const current = startPercent + (targetPercent - startPercent) * progress;
+                    progressFill.style.width = current + '%';
+                    progressPercent.textContent = Math.round(current) + '%';
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        resolve();
+                    }
+                }
+                requestAnimationFrame(step);
+            });
+        }
 
-        // -- Start checks sequentially --
+        const CHECK_DURATION = 10000; // 10 seconds verification time per check
+        const TRANSITION_DELAY = 2000; // 2 seconds after check before next
+        const PAUSE_AT_63 = true; // pause at 63% for extra verification
+
         try {
-
             // 1. Anti‑frame
+            progressLabel.textContent = 'Anti‑frame protection...';
+            await animateProgress(10, CHECK_DURATION, 0);
             if (window.top !== window.self) {
-                setCheck('check-anti-frame', false, 'Framed access denied');
+                setCheck('check-anti-frame', false, 'Framed');
                 showGlobalError('Access denied: page loaded in a frame.');
                 return;
             }
             setCheck('check-anti-frame', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // 2. WebDriver / automation
+            // 2. WebDriver
+            progressLabel.textContent = 'Browser automation detection...';
+            await animateProgress(20, CHECK_DURATION, 10);
             if (navigator.webdriver) {
-                setCheck('check-webdriver', false, 'Automated browser detected');
+                setCheck('check-webdriver', false, 'Automation');
                 showGlobalError('Automated browsing is not allowed.');
                 return;
             }
             setCheck('check-webdriver', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // 3. Adblock detection
+            // 3. Adblock
+            progressLabel.textContent = 'Ad blocker verification...';
+            await animateProgress(30, CHECK_DURATION, 20);
             const adTest = document.createElement('div');
             adTest.className = 'adsbox';
             adTest.style.height = '1px';
@@ -153,28 +185,32 @@
             adTest.style.top = '-10px';
             adTest.style.left = '-10px';
             document.body.appendChild(adTest);
-            await sleep(200);
+            await sleep(150);
             const adBlocked = (adTest.offsetHeight === 0 || adTest.clientHeight === 0 || adTest.offsetParent === null);
             document.body.removeChild(adTest);
             if (adBlocked) {
-                setCheck('check-adblock', false, 'Ad blocker active');
+                setCheck('check-adblock', false, 'Adblocker');
                 showGlobalError('Ad blocker detected. Please disable it to continue.');
                 return;
             }
             setCheck('check-adblock', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // 4. Privacy browser (Tor, etc.)
+            // 4. Privacy browser
+            progressLabel.textContent = 'Privacy browser check...';
+            await animateProgress(40, CHECK_DURATION, 30);
             const ua = navigator.userAgent.toLowerCase();
             if (ua.includes('tor') || (navigator.productSub === '20100101' && navigator.vendor === '')) {
-                setCheck('check-privacy', false, 'Privacy browser');
+                setCheck('check-privacy', false, 'Privacy');
                 showGlobalError('Private/anonymous browsers are not supported.');
                 return;
             }
             setCheck('check-privacy', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // 5. Console / DevTools open detection
+            // 5. DevTools
+            progressLabel.textContent = 'Developer tools detection...';
+            await animateProgress(50, CHECK_DURATION, 40);
             let devtoolsOpen = false;
             const threshold = 160;
             const detectDevTools = () => {
@@ -183,43 +219,49 @@
                 if (widthThreshold || heightThreshold) devtoolsOpen = true;
             };
             detectDevTools();
-            // Also check via performance timing trick
-            const start = performance.now();
+            const startT = performance.now();
             debugger;
-            const timeDiff = performance.now() - start;
-            if (timeDiff > 100) devtoolsOpen = true;  // debugger statement paused if DevTools open
-
+            if (performance.now() - startT > 100) devtoolsOpen = true;
             if (devtoolsOpen) {
-                setCheck('check-console', false, 'Developer tools open');
+                setCheck('check-console', false, 'DevTools open');
                 showGlobalError('Please close developer tools to continue.');
                 return;
             }
             setCheck('check-console', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
             // 6. Google connectivity
+            progressLabel.textContent = 'Google connectivity...';
+            await animateProgress(60, CHECK_DURATION, 50);
             try {
                 await fetchWithTimeout('https://www.google.com/generate_204', 3000);
                 setCheck('check-google', true);
             } catch (e) {
-                setCheck('check-google', false, 'No internet or Google unreachable');
+                setCheck('check-google', false, 'No internet');
                 showGlobalError('Unable to reach Google services. Check your internet connection.');
                 return;
             }
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
             // 7. Google APIs
+            progressLabel.textContent = 'Google APIs...';
+            await animateProgress(63, CHECK_DURATION, 60);  // reach 63% as requested
             try {
                 await fetchWithTimeout('https://www.googleapis.com/', 3000);
                 setCheck('check-googleapis', true);
             } catch (e) {
-                setCheck('check-googleapis', false, 'Google APIs unreachable');
-                showGlobalError('Cannot connect to Google APIs. Try again later.');
+                setCheck('check-googleapis', false, 'APIs unreachable');
+                showGlobalError('Cannot connect to Google APIs.');
                 return;
             }
-            await sleep(CHECK_DELAY);
+            // Pause at 63% to verify previous checks
+            progressLabel.textContent = 'Verifying previous checks...';
+            await sleep(4000); // dramatic pause
+            // continue after verification
 
             // 8. Firebase Auth
+            progressLabel.textContent = 'Firebase Auth...';
+            await animateProgress(80, CHECK_DURATION + 2000, 63); // take extra time to reach 80
             const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
             const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
 
@@ -232,66 +274,45 @@
                 appId: "1:540372566529:web:f419eb34cfa4d4a41b3600",
                 measurementId: "G-TYZNPG9Z8F"
             };
-
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
 
-            const authReady = new Promise((resolve, reject) => {
+            const user = await new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => reject(new Error('Firebase Auth timed out')), 8000);
-                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                const unsubscribe = onAuthStateChanged(auth, (u) => {
                     clearTimeout(timeout);
                     unsubscribe();
-                    resolve(user);
+                    resolve(u);
                 }, (err) => {
                     clearTimeout(timeout);
                     reject(err);
                 });
             });
-            const user = await authReady;
             setCheck('check-firebase-auth', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
             // 9. Firebase Storage
+            progressLabel.textContent = 'Firebase Storage...';
+            await animateProgress(90, CHECK_DURATION, 80);
             try {
                 await fetchWithTimeout('https://firebasestorage.googleapis.com/v0/b/social-wars-2a532.firebasestorage.app/o/healthcheck', 4000);
                 setCheck('check-firebase-storage', true);
             } catch (e) {
                 setCheck('check-firebase-storage', false, 'Storage unreachable');
-                showGlobalError('Cannot reach Firebase Storage. Game assets may be unavailable.');
+                showGlobalError('Cannot reach Firebase Storage.');
                 return;
             }
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // 10. Session validation (user object)
+            // 10. Session validation
+            progressLabel.textContent = 'Session validation...';
+            await animateProgress(100, CHECK_DURATION, 90);
             setCheck('check-session', true);
-            await sleep(CHECK_DELAY);
+            await sleep(TRANSITION_DELAY);
 
-            // (Optional) AI Security Scan using external services
-            // You can integrate DeepSeek, Claude, ChatGPT, Gemini, Grok by sending the user's
-            // environment data (user-agent, IP metadata, etc.) to an API endpoint for verification.
-            // Example (commented out):
-            /*
-            const aiCheckRow = document.getElementById('check-ai');
-            aiCheckRow.style.display = 'flex';
-            try {
-                const aiResponse = await fetch('https://api.your-ai-service.com/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer YOUR_KEY' },
-                    body: JSON.stringify({ userAgent: navigator.userAgent, language: navigator.language })
-                });
-                if (!aiResponse.ok) throw new Error('AI suspicion');
-                setCheck('check-ai', true);
-            } catch (err) {
-                setCheck('check-ai', false, 'AI verification failed');
-                showGlobalError('Your session has been flagged by AI security.');
-                return;
-            }
-            await sleep(CHECK_DELAY);
-            */
-
-            // All checks passed
+            // All passed
             document.getElementById('all-ok-msg').style.display = 'block';
-            document.getElementById('progress-fill').style.background = '#1e8449';
+            progressFill.style.background = '#1e8449';
             await sleep(1500);
             if (user) {
                 window.location.href = 'play.html';
@@ -301,7 +322,11 @@
 
         } catch (err) {
             console.error(err);
-            showGlobalError('A critical error occurred. Please try again later.');
+            showGlobalError('A critical error occurred. Please try again.');
+        }
+
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
         }
     })();
 </script>
