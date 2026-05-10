@@ -487,7 +487,19 @@
                 showMsg('Please verify your email before logging in. Check your inbox.', 'error');
                 await auth.signOut(); return;
             }
-            window.location.href = 'play.html';
+            // Get Firebase token and send to server
+            const token = await result.user.getIdToken();
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ token: token, GAMEVERSION: 'Basesec_1.5.4.swf' })
+            });
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                // If not redirected, something went wrong
+                showMsg('Login error: could not reach game server.', 'error');
+            }
         } catch (e) { showMsg(firebaseError(e.code), 'error'); }
     });
 
