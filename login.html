@@ -132,6 +132,13 @@
 </head>
 <body class="ego_wide canvas center_fixed_width_app fbx UIPage_LoggedOut liquid hideBanner Locale_en_US">
 
+<!-- ═══ INDEX VERIFICATION GUARD ═══ -->
+<script>
+    if (!sessionStorage.getItem('index_verified')) {
+        window.location.href = 'index.html';
+    }
+</script>
+
 <div class="sw-box">
     <div class="sw-logo">
         <img src="img/logo.png" alt="Social Wars"/>
